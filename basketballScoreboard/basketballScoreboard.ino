@@ -38,14 +38,14 @@ void loop() {
   static int displayNum = 0;
   static int val;
 
-  // variables used for points tracking ** Pushbutton will change to ultrasonic sensor **
+  // variables used for points tracking ** Momentary limit switch with long arm in hoop **
   static int points = 0;
   static int basketState = 1;
   static int lastBasketState = 1;
   static unsigned long lastDebounceTime = 0; // the last time the output pin was toggled
   static unsigned long debounceDelay = 50; // the debounce time; increase if the output flickers
 
-  // read basket score pin and log it
+  // read basket score pin
   val = digitalRead(basketPin);
   //Serial.println(val); // Console log testing scoring
 
@@ -53,11 +53,11 @@ void loop() {
      How point scoring works:
      basketState is normally 1, basketState is 0 when sensor detects ball.
      When basketState changes, reset debounce time
-     When basketState exceeds debounce time and is going from 0 to 1 state (score action ends) add a point.
+     When basketState exceeds debounce time and is going from 1 to 0 state (score action starts) add a point.
      Anything else do nothing
   */
 
-  // basket state was changed
+  // basket state was changed reset debounce timer
   if (val != lastBasketState) {
     lastDebounceTime = millis();
   }
@@ -70,8 +70,8 @@ void loop() {
     if (val != basketState) {
       //change basket state
       basketState = val;
-      // If point changed back to 1 then add point if there is time on the clock
-      if (basketState == 1 && deciSeconds > 0) {
+      // If basket state changed back to 1 and there is time on the clock add the point
+      if (basketState == 0 && deciSeconds > 0) {
         points++;
         Serial.println(points);
       }
@@ -88,16 +88,16 @@ void loop() {
     timer = millis();
   }
 
-  // Countdown a second from the timer every second
+  // Remove a second from the timer every second that goes by
   if (millis() - timer > 1000) {
     timer += 1000; // Adjusted to 1000 milliseconds is equal to 1 decisecond
-    if (deciSeconds > 0) { // If seconds are still greater than zero keep counting and adding score
+    if (deciSeconds > 0) { // If seconds are still greater than zero keep counting
       deciSeconds--;
     }
   }
 
   // Update the display
-  displayNum = (points * 100) + deciSeconds; // Setting the display value
+  displayNum = (points * 100) + deciSeconds; // Setting the display value, first two digits are points, last two digits are seconds left
   sevseg.setNumber(displayNum, 2);
   sevseg.refreshDisplay(); // Must run repeatedly
 }
